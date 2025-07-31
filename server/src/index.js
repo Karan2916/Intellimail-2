@@ -150,9 +150,4 @@ For example, if the emails with IDs "3" and "5" match, your response should be:
 
 
 // Start server
-app.listen(port, () => {
-  console.log(`IntelliMail server listening at http://localhost:${port}`);
-});
-
-// Export the app for Vercel's serverless environment
-export default app;
+module.exports = app;
