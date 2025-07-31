@@ -15,13 +15,14 @@ export const Alert: React.FC = () => (
                 <li>
                     <strong>Configure your Google Client ID (Frontend):</strong>
                     <ul className="list-disc list-inside ml-5 mt-1 text-gray-400 space-y-2">
-                        <li>
-                            In your code editor, open the file: <br/>
-                            <code className="bg-gray-700/80 p-1.5 rounded text-sm mt-1 inline-block">client/src/config.ts</code>
-                        </li>
                         <li>Visit the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Google API Console</a>.</li>
                         <li>Create an "OAuth 2.0 Client ID" with the type "Web application".</li>
-                        <li>Paste the Client ID into the <code className="bg-gray-700 p-1 rounded">GOOGLE_CLIENT_ID</code> variable in the config file.</li>
+                        <li>
+                            For local development, create a file named <code className="bg-gray-700 p-1 rounded">.env.local</code> in the <code className="bg-gray-700 p-1 rounded">client/</code> directory.
+                        </li>
+                        <li>Add your Client ID to that file like this (the `VITE_` prefix is important):<br/>
+                            <code className="bg-gray-700/80 p-1.5 rounded text-sm mt-1 inline-block">VITE_GOOGLE_CLIENT_ID='YOUR_CLIENT_ID_HERE'</code>
+                        </li>
                     </ul>
                 </li>
                 <li>
