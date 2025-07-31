@@ -39,8 +39,11 @@ The client application uses Google Sign-In for authentication.
 
 1.  Go to the Google API Console.
 2.  Create a new **OAuth 2.0 Client ID** for a **Web application**.
-3.  Open the frontend configuration file located at `client/src/config.ts`.
-4.  Paste your generated Client ID into the `GOOGLE_CLIENT_ID` variable.
+3.  In the `client/` directory, create a new file named `.env.local`.
+4.  Add your Client ID to the `.env.local` file. The `VITE_` prefix is required by Vite.
+    ```
+    VITE_GOOGLE_CLIENT_ID='YOUR_GOOGLE_CLIENT_ID_HERE'
+    ```
 
 ### 3. Run the Application
 
