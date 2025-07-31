@@ -47,12 +47,12 @@ app.post('/api/generate', async (req, res) => {
     const systemInstruction = `You are an expert email assistant. Write a professional email based on the user's prompt. The tone of the email should be ${tone}. Respond with only the email body content, without any greetings or sign-offs unless specified in the prompt.`;
     
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         contents: prompt,
         config: { systemInstruction, temperature: 0.7 }
     });
     
-    res.json({ content: response.text });
+    res.json({ content: response.text() });
   } catch (error) {
     handleApiError(res, error, 'Failed to generate email content.');
   }
@@ -68,10 +68,10 @@ app.post('/api/summarize-text', async (req, res) => {
   try {
     const prompt = `Please summarize the following email thread into a few key bullet points. Focus on action items, decisions, and important questions. Here is the text:\n\n---\n\n${text}`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         contents: prompt
     });
-    res.json({ summary: response.text });
+    res.json({ summary: response.text() });
   } catch (error) {
     handleApiError(res, error, 'Failed to summarize text.');
   }
@@ -97,11 +97,11 @@ app.post('/api/summarize-image', async (req, res) => {
         };
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: { parts: [imagePart, textPart] },
         });
 
-        res.json({ summary: response.text });
+        res.json({ summary: response.text() });
     } catch (error) {
         handleApiError(res, error, 'Failed to summarize the image.');
     }
@@ -125,7 +125,7 @@ For example, if the emails with IDs "3" and "5" match, your response should be:
         const prompt = `User Query: "${query}"\n\nEmail List (JSON):\n${JSON.stringify(simplifiedEmails, null, 2)}`;
         
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-1.5-flash",
             contents: prompt,
             config: {
                 systemInstruction,
@@ -137,7 +137,7 @@ For example, if the emails with IDs "3" and "5" match, your response should be:
             }
         });
         
-        const resultText = response.text.trim();
+        const resultText = response.text().trim();
         const matchingIds = resultText ? JSON.parse(resultText) : [];
         const results = emails.filter(email => matchingIds.includes(email.id));
         
@@ -153,3 +153,6 @@ For example, if the emails with IDs "3" and "5" match, your response should be:
 app.listen(port, () => {
   console.log(`IntelliMail server listening at http://localhost:${port}`);
 });
+
+// Export the app for Vercel's serverless environment
+export default app;
