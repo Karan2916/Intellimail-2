@@ -1,0 +1,6 @@
+{
+  "name": "IntelliMail AI Assistant",
+  "description": "A smart mail agent that connects to your Gmail account to provide AI-powered summarization, composition, and search using the Gemini API. This app requires Google OAuth2 authentication to access your emails.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
