@@ -1,33 +1,36 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
 import express from 'express';
 import cors from 'cors';
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 
 const app = express();
-const port = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors()); // In production, configure this for your frontend's domain
-// Increase payload size limit for base64 images
+app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Securely initialize Gemini AI
-// The API key MUST be set as an environment variable in your hosting provider.
+// --- Gemini AI Initialization ---
 if (!process.env.GEMINI_API_KEY) {
-    console.error("FATAL ERROR: GEMINI_API_KEY environment variable not set.");
-    process.exit(1); // Exit if the key is not configured
+  console.error("FATAL ERROR: GEMINI_API_KEY environment variable not set.");
+  process.exit(1);
 }
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Centralized error handler
+const model = genAI.getGenerativeModel({
+  model: "gemini-1.5-flash",
+  safetySettings: [
+    {
+      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    },
+  ],
+});
+
+// --- Centralized Error Handler ---
 const handleApiError = (res, error, message) => {
   console.error(message, error);
   res.status(500).json({ message: message || 'An internal server error occurred' });
 };
-
 
 // --- API Endpoints ---
 
@@ -44,15 +47,14 @@ app.post('/api/generate', async (req, res) => {
   }
 
   try {
-    const systemInstruction = `You are an expert email assistant. Write a professional email based on the user's prompt. The tone of the email should be ${tone}. Respond with only the email body content, without any greetings or sign-offs unless specified in the prompt.`;
-    
-    const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
-        contents: prompt,
-        config: { systemInstruction, temperature: 0.7 }
-    });
-    
+    const fullPrompt = `You are an expert email assistant. Write a professional email based on the user's prompt. The tone of the email should be ${tone}. Respond with only the email body content, without any greetings or sign-offs unless specified in the prompt.
+
+    User Prompt: "${prompt}"`;
+
+    const result = await model.generateContent(fullPrompt);
+    const response = result.response;
     res.json({ content: response.text() });
+
   } catch (error) {
     handleApiError(res, error, 'Failed to generate email content.');
   }
@@ -66,12 +68,12 @@ app.post('/api/summarize-text', async (req, res) => {
   }
 
   try {
-    const prompt = `Please summarize the following email thread into a few key bullet points. Focus on action items, decisions, and important questions. Here is the text:\n\n---\n\n${text}`;
-    const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
-        contents: prompt
-    });
+    const fullPrompt = `Please summarize the following email thread into a few key bullet points. Focus on action items, decisions, and important questions. Here is the text:\n\n---\n\n${text}`;
+
+    const result = await model.generateContent(fullPrompt);
+    const response = result.response;
     res.json({ summary: response.text() });
+
   } catch (error) {
     handleApiError(res, error, 'Failed to summarize text.');
   }
@@ -79,75 +81,64 @@ app.post('/api/summarize-text', async (req, res) => {
 
 // Summarize Image
 app.post('/api/summarize-image', async (req, res) => {
-    const { image, mimeType } = req.body; // image is a base64 encoded string
-    if (!image || !mimeType) {
-        return res.status(400).json({ message: 'A base64-encoded image and its mimeType are required.' });
-    }
+  const { image, mimeType } = req.body;
+  if (!image || !mimeType) {
+    return res.status(400).json({ message: 'A base64-encoded image and its mimeType are required.' });
+  }
 
-    try {
-        const imagePart = {
-            inlineData: {
-                data: image,
-                mimeType: mimeType,
-            },
-        };
+  try {
+    const imagePart = {
+      inlineData: {
+        data: image,
+        mimeType: mimeType,
+      },
+    };
 
-        const textPart = {
-            text: "Analyze this image. If it's a document or chart, summarize its key information. If it's a picture, describe what is happening in detail.",
-        };
+    const textPart = "Analyze this image. If it's a document or chart, summarize its key information. If it's a picture, describe what is happening in detail.";
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
-            contents: { parts: [imagePart, textPart] },
-        });
+    const result = await model.generateContent([textPart, imagePart]);
+    const response = result.response;
+    res.json({ summary: response.text() });
 
-        res.json({ summary: response.text() });
-    } catch (error) {
-        handleApiError(res, error, 'Failed to summarize the image.');
-    }
+  } catch (error) {
+    handleApiError(res, error, 'Failed to summarize the image.');
+  }
 });
-
 
 // Search Emails
 app.post('/api/search', async (req, res) => {
-    const { query, emails } = req.body;
-    if (!query || !Array.isArray(emails)) {
-        return res.status(400).json({ message: 'Query and emails array are required.' });
-    }
+  const { query, emails } = req.body;
+  if (!query || !Array.isArray(emails)) {
+    return res.status(400).json({ message: 'Query and emails array are required.' });
+  }
 
-    try {
-        const systemInstruction = `You are a powerful semantic search agent for an email client. Your task is to analyze a user's natural language query and find matching emails from a provided JSON list.
+  try {
+    const generationConfig = {
+      responseMimeType: "application/json",
+    };
+    const searchModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig });
+
+    const systemInstruction = `You are a powerful semantic search agent for an email client. Your task is to analyze a user's natural language query and find matching emails from a provided JSON list.
 Respond ONLY with a JSON array of the IDs of the emails that match the query. Do not add any other text, explanation, or markdown formatting.
 For example, if the emails with IDs "3" and "5" match, your response should be:
 ["3", "5"]`;
-        
-        const simplifiedEmails = emails.map(e => ({ id: e.id, from: e.sender, subject: e.subject, snippet: e.snippet }));
-        const prompt = `User Query: "${query}"\n\nEmail List (JSON):\n${JSON.stringify(simplifiedEmails, null, 2)}`;
-        
-        const response = await ai.models.generateContent({
-            model: "gemini-1.5-flash",
-            contents: prompt,
-            config: {
-                systemInstruction,
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING }
-                }
-            }
-        });
-        
-        const resultText = response.text().trim();
-        const matchingIds = resultText ? JSON.parse(resultText) : [];
-        const results = emails.filter(email => matchingIds.includes(email.id));
-        
-        res.json({ results });
-        
-    } catch (error) {
-        handleApiError(res, error, 'Failed to perform AI search.');
-    }
+
+    const simplifiedEmails = emails.map(e => ({ id: e.id, from: e.sender, subject: e.subject, snippet: e.snippet }));
+    const prompt = `User Query: "${query}"\n\nEmail List (JSON):\n${JSON.stringify(simplifiedEmails, null, 2)}`;
+
+    const result = await searchModel.generateContent([systemInstruction, prompt]);
+    const response = result.response;
+
+    const resultText = response.text().trim();
+    const matchingIds = resultText ? JSON.parse(resultText) : [];
+    const results = emails.filter(email => matchingIds.includes(email.id));
+
+    res.json({ results });
+
+  } catch (error) {
+    handleApiError(res, error, 'Failed to perform AI search.');
+  }
 });
 
-
-// Start server
-module.exports = app;
+// Export the app for Vercel
+export default app;
