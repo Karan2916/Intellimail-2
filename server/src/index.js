@@ -37,6 +37,23 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
+// --- TEMPORARY DEBUG ENDPOINT ---
+app.get('/api/debug-key', (req, res) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (apiKey && apiKey.length > 10) {
+    // Only show the first 5 and last 5 chars for security
+    const maskedKey = `${apiKey.substring(0, 5)}...${apiKey.substring(apiKey.length - 5)}`;
+    res.status(200).json({
+      message: 'SUCCESS: GEMINI_API_KEY environment variable was found.',
+      keyPreview: maskedKey
+    });
+  } else {
+    res.status(404).json({
+      message: 'FATAL ERROR: GEMINI_API_KEY is MISSING or invalid.'
+    });
+  }
+});
+
 // Generate Email Content
 app.post('/api/generate', async (req, res) => {
   const { prompt, tone } = req.body;
