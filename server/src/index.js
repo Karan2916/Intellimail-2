@@ -151,4 +151,7 @@ app.use((req, res, next) => {
 
 
 // Export the app for Vercel
-export default app;
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`Server is running and listening on port ${PORT}`);
+});
