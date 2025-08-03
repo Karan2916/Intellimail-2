@@ -1,4 +1,3 @@
-
 import React, { useContext, useState, useEffect } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { AppContext } from '../state/AppContext';
@@ -39,6 +38,7 @@ export const LoginPage: React.FC = () => {
       setAuthFailed(true);
     },
     scope: GMAIL_SCOPES,
+    flow: 'implicit', // <-- This is the required fix
   });
 
   if (authFailed) {
@@ -82,10 +82,10 @@ export const LoginPage: React.FC = () => {
                 <ol className="list-decimal list-inside space-y-2 text-gray-300">
                     <li>In the same OAuth settings, find <strong>Authorized redirect URIs</strong> and click <strong>+ ADD URI</strong>.</li>
                     <li>
-                      Add your app's origin here as well: <code className="bg-gray-700 p-1 rounded">{origin || 'Loading...'}</code>
+                        Add your app's origin here as well: <code className="bg-gray-700 p-1 rounded">{origin || 'Loading...'}</code>
                     </li>
                     <li>
-                      <strong>Note:</strong> You might see an existing URI like <code className="bg-gray-600 p-1 rounded">https://accounts.google.com/gsi/client</code>. This is used by Google's Sign-In library and should be left in place. The most important action is to ensure your app's origin URI is also on this list.
+                        <strong>Note:</strong> You might see an existing URI like <code className="bg-gray-600 p-1 rounded">https://accounts.google.com/gsi/client</code>. This is used by Google's Sign-In library and should be left in place. The most important action is to ensure your app's origin URI is also on this list.
                     </li>
                 </ol>
 
