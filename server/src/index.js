@@ -24,11 +24,23 @@ const model = genAI.getGenerativeModel({
   ],
 });
 
-// --- Centralized Error Handler ---
+// --- [IMPROVED] Centralized Error Handler ---
 const handleApiError = (res, error, message) => {
+  // This always logs the full, detailed error on your Vercel server logs
   console.error(message, error);
-  res.status(500).json({ message: message || 'An internal server error occurred' });
+
+  // For the response sent back to the browser:
+  const errorMessage = error.message || 'An internal server error occurred';
+  
+  // Only include the detailed stack trace if NOT in production
+  const errorStack = process.env.NODE_ENV !== 'production' ? error.stack : undefined;
+  
+  res.status(500).json({ 
+    message: message || errorMessage,
+    stack: errorStack // The stack will be undefined in production
+  });
 };
+
 
 // --- API Endpoints ---
 
@@ -125,6 +137,18 @@ app.post('/api/search', async (req, res) => {
     handleApiError(res, error, 'Failed to perform AI search.');
   }
 });
+
+
+// --- [NEW] Catch-all for 404 Not Found errors ---
+// This must be the last app.use() call before the export
+app.use((req, res, next) => {
+  res.status(404).json({ 
+    message: `Route Not Found`,
+    method: req.method,
+    path: req.originalUrl 
+  });
+});
+
 
 // Export the app for Vercel
 export default app;
