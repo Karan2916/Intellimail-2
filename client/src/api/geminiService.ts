@@ -1,7 +1,7 @@
 
 import { type Email } from '../types';
 
-const API_BASE_URL = '/api'; // Using a relative path for proxying
+const API_BASE_URL = 'https://intellimail-server.onrender.com/api'; // Using a relative path for proxying
 
 // Helper to handle API responses and errors
 const handleApiResponse = async (response: Response) => {
