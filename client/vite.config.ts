@@ -5,17 +5,17 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   
-  // This is the correct setup for a monorepo where Vite
-  // runs from the root but the client code is in a subfolder.
-  root: 'client',
-
+  // NOTE: The 'root' property has been removed.
+  // Render's "Root Directory" setting now handles this.
+  
   build: {
-    // This tells Vite to put the build output in 'client/dist'.
+    // Vite will run inside the 'client' folder, so the output
+    // will correctly be placed in 'client/dist'.
     outDir: 'dist',
     emptyOutDir: true,
   },
   
-  // This proxy is perfect for local development.
+  // Your server proxy for local development is still fine.
   server: {
     port: 5173,
     proxy: {
