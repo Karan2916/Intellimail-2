@@ -37,6 +37,7 @@ export enum ActiveView {
   SUMMARY = 'summary',
   COMPOSE = 'compose',
   SEARCH = 'search',
+  PRIVACY = 'privacy',
 }
 
 export type Theme = 'light' | 'dark';

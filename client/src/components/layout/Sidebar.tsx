@@ -2,7 +2,7 @@
 import React, { useContext } from 'react';
 import { AppContext } from '../../state/AppContext';
 import { ActiveView } from '../../types';
-import { InboxIcon, SparklesIcon, EditIcon, SearchIcon, LogOutIcon, AppLogoIcon } from '../common/Icons';
+import { InboxIcon, SparklesIcon, EditIcon, SearchIcon, LogOutIcon, AppLogoIcon, ShieldIcon } from '../common/Icons';
 import { ThemeSwitcher } from './ThemeSwitcher';
 
 interface NavItemProps {
@@ -64,8 +64,15 @@ export const Sidebar: React.FC = () => {
       <div className="mt-auto space-y-4">
         <ThemeSwitcher />
         <div className="pt-4 border-t border-slate-200/80 dark:border-gray-700/50">
+          <NavItem
+            icon={<ShieldIcon className="w-5 h-5" />}
+            label="Privacy Policy"
+            view={ActiveView.PRIVACY}
+            isActive={activeView === ActiveView.PRIVACY}
+            onClick={() => setActiveView(ActiveView.PRIVACY)}
+          />
           {userInfo && (
-            <div className="flex items-center">
+            <div className="flex items-center pt-4">
                 <img src={userInfo.picture} alt="avatar" className="w-8 h-8 rounded-full" />
                 <div className="ml-3 overflow-hidden">
                     <p className="text-sm font-semibold text-slate-900 dark:text-white truncate" title={userInfo.name}>{userInfo.name}</p>

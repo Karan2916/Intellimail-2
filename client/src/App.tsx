@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AppContext } from './state/AppContext';
@@ -9,6 +6,7 @@ import { InboxPage } from './pages/InboxPage';
 import { SummaryPage } from './pages/SummaryPage';
 import { ComposePage } from './pages/ComposePage';
 import { SearchPage } from './pages/SearchPage';
+import { PrivacyPage } from './pages/PrivacyPage';
 import { LoginPage } from './pages/LoginPage';
 import { fetchGmailEmails, getUserInfo } from './api/googleApiService';
 import type { Email, UserInfo, ActiveView, Theme } from './types';
@@ -109,6 +107,8 @@ export default function App() {
         return <ComposePage />;
       case ActiveViewEnum.SEARCH:
         return <SearchPage />;
+      case ActiveViewEnum.PRIVACY:
+        return <PrivacyPage />;
       default:
         return <InboxPage />;
     }
