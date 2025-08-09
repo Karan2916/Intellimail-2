@@ -13,9 +13,9 @@ import { LoginPage } from './pages/LoginPage';
 import { fetchGmailEmails, getUserInfo } from './api/googleApiService';
 import type { Email, UserInfo, ActiveView, Theme } from './types';
 import { ActiveView as ActiveViewEnum } from './types';
-import { Spinner } from './components/common/Icons';
-import { Alert } from './components/common/Alert';
 import { GOOGLE_CLIENT_ID } from './config';
+import { ThemeProvider, CssBaseline, Box, CircularProgress } from '@mui/material';
+import lightTheme, { darkTheme } from './theme';
 
 export default function App() {
   const [activeView, setActiveView] = useState<ActiveView>(ActiveViewEnum.INBOX);
@@ -37,11 +37,6 @@ export default function App() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
-    const root = window.document.documentElement;
-    const isDark = theme === 'dark';
-
-    root.classList.toggle('dark', isDark);
     localStorage.setItem('theme', theme);
   }, [theme]);
 
@@ -117,25 +112,29 @@ export default function App() {
   const renderContent = () => {
     if (isAppLoading) {
       return (
-        <div className="flex items-center justify-center h-full">
-          <Spinner className="w-10 h-10" />
-        </div>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+          <CircularProgress />
+        </Box>
       );
     }
 
     if (!areKeysConfigured) {
-        return <Alert />;
+        return (
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <Typography color="error">Google Client ID is not configured. Please check the documentation.</Typography>
+            </Box>
+        );
     }
 
     return accessToken ? (
-      <div className="flex h-full w-full relative">
+      <Box sx={{ display: 'flex', height: '100%', width: '100%', position: 'relative' }}>
         <Sidebar />
-        <main className="flex-1 flex flex-col h-full dark:bg-grid-slate-700/[0.2]">
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 2, sm: 3, md: 4 } }}>
             {renderActiveView()}
-          </div>
-        </main>
-      </div>
+          </Box>
+        </Box>
+      </Box>
     ) : (
       <LoginPage />
     );
@@ -144,13 +143,10 @@ export default function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AppContext.Provider value={appContextValue}>
-        <div className="h-screen w-full font-sans overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-             <div className="absolute w-96 h-96 bg-blue-500/20 rounded-full filter blur-3xl opacity-50 -translate-x-1/4 -translate-y-1/4"></div>
-             <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full filter blur-3xl opacity-50 translate-x-1/4 translate-y-1/4"></div>
-          </div>
+        <ThemeProvider theme={theme === 'dark' ? darkTheme : lightTheme}>
+          <CssBaseline />
           {renderContent()}
-        </div>
+        </ThemeProvider>
       </AppContext.Provider>
     </GoogleOAuthProvider>
   );
