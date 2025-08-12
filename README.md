@@ -4,8 +4,8 @@ A smart email assistant powered by the Gemini API that can summarize your emails
 
 **[Live Demo](https://intellimail-0bpw.onrender.com)**
 
-![IntelliMail Screenshot](<img width="1919" height="910" alt="Screenshot 2025-08-08 142910" src="https://github.com/user-attachments/assets/042d2077-c2ba-4e3c-b8e4-404f8a1b88ce" />
-)
+<img width="1919" height="910" alt="Screenshot 2025-08-08 142910" src="https://github.com/user-attachments/assets/6bc16ec8-8a46-4cf8-9e16-32fafccdf64b" />
+
 
 ## Prerequisites
 
