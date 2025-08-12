@@ -1,6 +1,10 @@
 # IntelliMail - Smart Mail Agent
 
-This repository contains the source code for IntelliMail, a smart email assistant powered by the Gemini API.
+A smart email assistant powered by the Gemini API that can summarize your emails, letting you catch up with your inbox in minutes.
+
+**[Live Demo](https://intellimail-0bpw.onrender.com)**
+
+![IntelliMail Screenshot](https://i.imgur.com/Kz9i1uG.png)
 
 ## Prerequisites
 
@@ -16,7 +20,6 @@ First, install the necessary dependencies for both the client and server workspa
 
 ```bash
 npm install
-```
 
 ### 2. Configure Environment Variables
 
