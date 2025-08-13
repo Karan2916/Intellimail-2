@@ -35,7 +35,7 @@ export const PrivacyPolicy: React.FC = () => {
       <p>You can revoke IntelliMail's access to your Google Account at any time by visiting the <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Google Account security settings page</a>.</p>
       
       <h3>6. Contact Us</h3>
-      <p>If you have any questions about this Privacy Policy, please contact us at: [Your-Email@example.com]</p>
+      <p>If you have any questions about this Privacy Policy, please contact us at: kadyakaranbalaji@gmail.com</p>
     </div>
   );
 };
