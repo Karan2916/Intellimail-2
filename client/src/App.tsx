@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { BrowserRouter as Router, Routes, Route, Outlet, Navigate, Link } from 'react-router-dom'; // Import Link
+import { BrowserRouter as Router, Routes, Route, Outlet, Navigate, Link } from 'react-router-dom';
 import { AppContext } from './state/AppContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { InboxPage } from './pages/InboxPage';
@@ -19,7 +19,6 @@ import { Spinner } from './components/common/Icons';
 import { Alert } from './components/common/Alert';
 import { GOOGLE_CLIENT_ID } from './config';
 
-// The layout for pages that are inside the main app (with sidebar)
 const MainLayout = () => (
   <div className="flex flex-col h-full w-full">
     <div className="flex flex-1 overflow-hidden relative">
@@ -30,7 +29,6 @@ const MainLayout = () => (
         </div>
       </main>
     </div>
-    {/* Footer for the main app */}
     <footer className="w-full border-t border-slate-700/50 bg-slate-800/20 backdrop-blur-sm px-4 py-2 text-center">
       <div className="flex justify-center items-center space-x-6 text-sm">
         <Link to="/terms" className="text-slate-400 hover:text-white transition-colors">Terms of Service</Link>
@@ -42,27 +40,29 @@ const MainLayout = () => (
 );
 
 export default function App() {
-  // --- All your existing state and functions remain exactly the same ---
   const [activeView, setActiveView] = useState<ActiveView>(ActiveViewEnum.INBOX);
   const [emails, setEmails] = useState<Email[]>([]);
-  // ... (the rest of your state and functions from the previous refactored example)
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isAppLoading, setIsAppLoading] = useState<boolean>(true);
   const [isFetchingEmails, setIsFetchingEmails] = useState<boolean>(false);
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== 'undefined') {
-      const storedTheme = localStorage.getItem('theme') as Theme;
-      return storedTheme === 'dark' ? 'dark' : 'light';
+  
+  // --- THIS IS THE CORRECTED THEME LOGIC ---
+  const [theme, setTheme] = useState<Theme>('light'); // Default value
+
+  // This effect runs only in the browser to get the theme from localStorage
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('theme') as Theme;
+    if (storedTheme === 'dark' || storedTheme === 'light') {
+      setTheme(storedTheme);
     }
-    return 'light';
-  });
+  }, []);
+  // ------------------------------------------
 
   const areKeysConfigured = GOOGLE_CLIENT_ID !== 'YOUR_GOOGLE_CLIENT_ID_HERE';
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
     const root = window.document.documentElement;
     root.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('theme', theme);
@@ -113,9 +113,7 @@ export default function App() {
 
   if (isAppLoading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center">
-        <Spinner className="w-10 h-10" />
-      </div>
+      <div className="h-screen w-full flex items-center justify-center"><Spinner className="w-10 h-10" /></div>
     );
   }
 
@@ -133,9 +131,13 @@ export default function App() {
           </div>
           <Router>
             <Routes>
-              {/* If logged in, go to the main app layout */}
-              <Route path="/*" element={accessToken ? <MainLayout /> : <Navigate to="/login" />} />
-              {/* Standalone pages */}
+              <Route path="/" element={accessToken ? <MainLayout /> : <Navigate to="/login" />}>
+                <Route index element={<InboxPage />} />
+                <Route path="summary" element={<SummaryPage />} />
+                <Route path="compose" element={<ComposePage />} />
+                <Route path="search" element={<SearchPage />} />
+              </Route>
+
               <Route path="/login" element={accessToken ? <Navigate to="/" /> : <LoginPage />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
