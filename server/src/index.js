@@ -6,7 +6,7 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' })); // Increased limit for image uploads
+app.use(express.json({ limit: '10mb' }));
 
 // --- Gemini AI Initialization ---
 if (!process.env.GEMINI_API_KEY) {
@@ -24,46 +24,51 @@ const model = genAI.getGenerativeModel({
   ],
 });
 
-// --- [IMPROVED] Centralized Error Handler ---
-const handleApiError = (res, error, message) => {
-  // This always logs the full, detailed error on your Vercel server logs
-  console.error(message, error);
+// --- [NEW] Retry Logic with Exponential Backoff ---
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  // For the response sent back to the browser:
+async function generateWithRetry(model, prompt, maxRetries = 3) {
+  let attempts = 0;
+  let waitTime = 1000; // Start with a 1-second wait
+
+  while (attempts < maxRetries) {
+    try {
+      const result = await model.generateContent(prompt);
+      return result; // If successful, return the result immediately
+    } catch (error) {
+      attempts++;
+      // Check if it's a 503 error (or other retryable server errors)
+      if (error.status === 503 && attempts < maxRetries) {
+        console.log(`Model overloaded. Retrying in ${waitTime / 1000}s... (Attempt ${attempts}/${maxRetries})`);
+        await delay(waitTime);
+        waitTime *= 2; // Double the wait time for the next attempt
+      } else {
+        // For other errors, or if max retries are reached, throw the error
+        throw error;
+      }
+    }
+  }
+}
+
+// --- Centralized Error Handler ---
+const handleApiError = (res, error, message) => {
+  console.error(message, error);
   const errorMessage = error.message || 'An internal server error occurred';
-  
-  // Only include the detailed stack trace if NOT in production
   const errorStack = process.env.NODE_ENV !== 'production' ? error.stack : undefined;
+  // Use the error's status code if it exists, otherwise default to 500
+  const status = error.status || 500;
   
-  res.status(500).json({ 
+  res.status(status).json({
     message: message || errorMessage,
-    stack: errorStack // The stack will be undefined in production
+    stack: errorStack
   });
 };
-
 
 // --- API Endpoints ---
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
-});
-
-// --- TEMPORARY DEBUG ENDPOINT ---
-app.get('/api/debug-key', (req, res) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (apiKey && apiKey.length > 10) {
-    // Only show the first 5 and last 5 chars for security
-    const maskedKey = `${apiKey.substring(0, 5)}...${apiKey.substring(apiKey.length - 5)}`;
-    res.status(200).json({
-      message: 'SUCCESS: GEMINI_API_KEY environment variable was found.',
-      keyPreview: maskedKey
-    });
-  } else {
-    res.status(404).json({
-      message: 'FATAL ERROR: GEMINI_API_KEY is MISSING or invalid.'
-    });
-  }
 });
 
 // Generate Email Content
@@ -75,7 +80,8 @@ app.post('/api/generate', async (req, res) => {
 
   try {
     const fullPrompt = `You are an expert email assistant. Write a professional email based on the user's prompt. The tone of the email should be ${tone}. Respond with only the email body content, without any greetings or sign-offs unless specified in the prompt.\n\nUser Prompt: "${prompt}"`;
-    const result = await model.generateContent(fullPrompt);
+    // Use the retry logic
+    const result = await generateWithRetry(model, fullPrompt);
     res.json({ content: result.response.text() });
   } catch (error) {
     handleApiError(res, error, 'Failed to generate email content.');
@@ -91,7 +97,8 @@ app.post('/api/summarize-text', async (req, res) => {
 
   try {
     const fullPrompt = `Please summarize the following email thread into a few key bullet points. Focus on action items, decisions, and important questions. Here is the text:\n\n---\n\n${text}`;
-    const result = await model.generateContent(fullPrompt);
+    // Use the retry logic
+    const result = await generateWithRetry(model, fullPrompt);
     res.json({ summary: result.response.text() });
   } catch (error) {
     handleApiError(res, error, 'Failed to summarize text.');
@@ -108,7 +115,9 @@ app.post('/api/summarize-image', async (req, res) => {
   try {
     const imagePart = { inlineData: { data: image, mimeType: mimeType } };
     const textPart = "Analyze this image. If it's a document or chart, summarize its key information. If it's a picture, describe what is happening in detail.";
-    const result = await model.generateContent([textPart, imagePart]);
+    const prompt = [textPart, imagePart];
+    // Use the retry logic
+    const result = await generateWithRetry(model, prompt);
     res.json({ summary: result.response.text() });
   } catch (error) {
     handleApiError(res, error, 'Failed to summarize the image.');
@@ -128,7 +137,8 @@ app.post('/api/search', async (req, res) => {
     const systemInstruction = `You are a powerful semantic search agent for an email client. Your task is to analyze a user's natural language query and find matching emails from a provided JSON list. Respond ONLY with a JSON array of the IDs of the emails that match the query. For example, if the emails with IDs "3" and "5" match, your response should be:\n["3", "5"]`;
     const simplifiedEmails = emails.map(e => ({ id: e.id, from: e.sender, subject: e.subject, snippet: e.snippet }));
     const prompt = `User Query: "${query}"\n\nEmail List (JSON):\n${JSON.stringify(simplifiedEmails, null, 2)}`;
-    const result = await searchModel.generateContent([systemInstruction, prompt]);
+    // Use the retry logic
+    const result = await generateWithRetry(searchModel, [systemInstruction, prompt]);
     const resultText = result.response.text().trim();
     const matchingIds = resultText ? JSON.parse(resultText) : [];
     const results = emails.filter(email => matchingIds.includes(email.id));
@@ -138,19 +148,16 @@ app.post('/api/search', async (req, res) => {
   }
 });
 
-
-// --- [NEW] Catch-all for 404 Not Found errors ---
-// This must be the last app.use() call before the export
+// Catch-all for 404 Not Found errors
 app.use((req, res, next) => {
-  res.status(404).json({ 
+  res.status(404).json({
     message: `Route Not Found`,
     method: req.method,
-    path: req.originalUrl 
+    path: req.originalUrl
   });
 });
 
-
-// Export the app for Vercel
+// Export the app
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Server is running and listening on port ${PORT}`);
