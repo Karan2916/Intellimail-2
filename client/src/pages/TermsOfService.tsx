@@ -23,7 +23,7 @@ export const TermsOfService: React.FC = () => {
       <p>The Service is provided on an "AS IS" and "AS AVAILABLE" basis. We make no warranties regarding the accuracy, reliability, or availability of the Service. In no event shall we be liable for any damages arising from the use or inability to use the Service.</p>
       
       <h3>5. Contact Us</h3>
-      <p>If you have any questions about these Terms, please contact us at: [Your-Email@example.com]</p>
+      <p>If you have any questions about these Terms, please contact us at:kadyakaranbalaji@gmail.com</p>
     </div>
   );
 };
